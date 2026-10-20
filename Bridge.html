@@ -1,0 +1,11 @@
+<!doctype html><html><head><meta name="referrer" content="no-referrer"></head><body><script>
+'use strict';
+const boot=<?!= boot ?>;
+window.addEventListener('message',e=>{
+ const m=e.data;
+ if(e.source!==window.top||e.origin!==boot.origin||!m||m.channel!==boot.channel||typeof m.id!=='string')return;
+ const reply=payload=>window.top.postMessage({channel:boot.channel,id:m.id,...payload},boot.origin);
+ google.script.run.withSuccessHandler(result=>reply({result})).withFailureHandler(e=>reply({error:e.message||'資料服務失敗'})).rpcV2(m.action,m.payload);
+});
+window.top.postMessage({channel:boot.channel,kind:'ready'},boot.origin);
+</script></body></html>

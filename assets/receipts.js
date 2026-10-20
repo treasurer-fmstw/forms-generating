@@ -35,7 +35,7 @@ async function addReceiptFiles(files){
    $('uploadProgress').textContent='正在處理 '+(index+1)+'／'+files.length+'：'+file.name;
    try{
     if(file.size>FMSTW_CONFIG.maxFileBytes)throw Error('超過單檔 12 MB 限制');
-    if(!/\.(jpe?g|png|webp|gif|bmp|heic|heif|pdf)$/i.test(file.name)&&!/^image\//.test(file.type)&&file.type!=='application/pdf')throw Error('請使用圖片或 PDF');
+    if(!/\.(jpe?g|png|webp|gif|bmp|heic|heif|hif|pdf)$/i.test(file.name)&&!/^image\//.test(file.type)&&file.type!=='application/pdf'&&!await HEIC.isHeic(file))throw Error('請使用圖片或 PDF');
     const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',await file.arrayBuffer())),b=>b.toString(16).padStart(2,'0')).join('');
     if(signatures.has(hash)){duplicates++;continue;}
     const imgs=await fileToImages(file);

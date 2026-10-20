@@ -53,7 +53,7 @@ loadDraft=async function(){try{const rows=(await LocalDB.entries('draft:')).filt
 async function persist(submit){
  if(saving)return;
  const d=collect();FMSTW.validate(d,submit);
- if(currentRecord&&JSON.stringify(d)===JSON.stringify(currentRecord.data)&&(!submit||currentRecord.status!=='草稿')){await showLinks(currentRecord);setStatus('內容沒有變更，沿用現有版本 '+currentRecord.version,'ok-msg');return;}
+ if(currentRecord&&JSON.stringify(d)===JSON.stringify((({registryCheck,...editable})=>editable)(currentRecord.data))&&(!submit||currentRecord.status!=='草稿')){await showLinks(currentRecord);setStatus('內容沒有變更，沿用現有版本 '+currentRecord.version,'ok-msg');return;}
  if(currentRecord?.signatures?.length&&!confirm('修改正式內容會建立新版本，並重新簽核。舊版與原簽章會保留。確定繼續？'))return;
  if(currentRecord&&currentRecord.data.docNo!==d.docNo)throw Error('編輯原單時不能更換單號；請另外新增單據');
  const snapshot=JSON.stringify({d,submit});
@@ -96,7 +96,7 @@ async function batchReceipts(input){
 function downloadBlob(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.textContent='若未自動下載，點此下載 '+name;a.className='download-fallback';document.querySelector('.wrap').append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},120000);}
 async function prepareSigningPdf(){
  if(!currentRecord||currentRecord.status==='草稿')throw Error('請先送出並儲存單據');
- if(JSON.stringify(collect())!==JSON.stringify(currentRecord.data))throw Error('欄位已變更，請先儲存新版再產生簽核 PDF');
+ if(JSON.stringify(collect())!==JSON.stringify((({registryCheck,...editable})=>editable)(currentRecord.data)))throw Error('欄位已變更，請先儲存新版再產生簽核 PDF');
  const blob=await makePdf(currentRecord.data),b64=await blobB64(blob);
  currentRecord=await Service.rpc('pdf',{docNo:currentRecord.data.docNo,editToken:currentRecord.editToken,version:currentRecord.version,b64,name:currentRecord.data.docNo+'.pdf',requestId:crypto.randomUUID()});
  downloadBlob(blob,currentRecord.data.docNo+'.pdf');setStatus('待簽 PDF 已保存，可將簽核連結交給下一位','ok-msg');

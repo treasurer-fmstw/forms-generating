@@ -133,13 +133,7 @@ function loadScriptOnce(src){
  * iPhone 的 HEIC：Safari 解得開，Chrome／Edge 不行。
  * 遇到時才載入解碼器轉成 JPEG，使用者不必自己先轉檔。
  */
-async function heicToFile(file){
-  await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/heic2any/0.0.4/heic2any.min.js');
-  let out=await heic2any({blob:file,toType:'image/jpeg',quality:0.85});
-  if(Array.isArray(out)) out=out[0];          /* 連拍 HEIC 會回傳陣列 */
-  return new File([out],(file.name||'image').replace(/\.(heic|heif)$/i,'')+'.jpg',
-                  {type:'image/jpeg'});
-}
+async function heicToFile(file){return HEIC.convert(file);}
 
 /**
  * 讀圖。一定要處理失敗，否則瀏覽器解不開的格式
@@ -332,7 +326,7 @@ function addRowSilent(){
     <td><input></td>
     <td class="amt"><input type="number" min="0" oninput="calc()"></td>
     <td class="amt mmcol"><input class="wmm" type="number" min="0" step="1" placeholder="自動"></td>
-    <td class="file"><input type="file" accept="image/*,.heic,.heif,application/pdf" onchange="pickReceipt(this)"><div class="thumb-box"></div></td>
+    <td class="file"><input type="file" accept="image/*,.heic,.heif,.hif,application/pdf" onchange="pickReceipt(this)"><div class="thumb-box"></div></td>
     <td class="del"><button class="row-del" onclick="this.closest('tr').remove();calc()">✕</button></td>`;
   $('itemsBody').appendChild(tr);
 }

@@ -30,6 +30,7 @@ window.Service=(()=>{
  }
  function token(){const a=new Uint8Array(32);crypto.getRandomValues(a);return Array.from(a,n=>n.toString(16).padStart(2,'0')).join('');}
  async function localCall(action,p){
+  if(action==='lookupRegistry')return {status:'local_only'};
   if(action==='list')return(await LocalDB.entries('record:')).map(([,r])=>({docNo:r.data.docNo,formType:r.data.formType,version:r.version,status:r.status,updatedAt:r.updatedAt,next:FMSTW.nextRole(r)}));
   if(action==='save'){
    FMSTW.validate(p.data,!!p.submit);
