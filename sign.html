@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<title>接續簽核 · FMSTW</title><meta name="referrer" content="no-referrer">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<style>
+  :root{--ink:#141412;--sub:#45443f;--faint:#5f5e58;--line:#d5d3ce;--line-s:#a8a69f;
+        --ok:#0b5c47;--warn:#8a4f0d;--danger:#9c2626}
+  *{box-sizing:border-box}
+  body{margin:0;background:#f4f5f7;color:var(--ink);
+    font-family:-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;font-size:15px;line-height:1.6}
+  .top{background:#fff;border-bottom:1px solid var(--line);padding:14px 22px;
+       display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:10}
+  .top b{font-size:16px;font-weight:500}
+  .top .meta{font-size:13px;color:var(--sub)}
+  .wrap{max-width:1040px;margin:22px auto;padding:0 18px;
+        display:grid;grid-template-columns:340px minmax(0,1fr);gap:22px;align-items:start}
+  @media (max-width:860px){.wrap{grid-template-columns:minmax(0,1fr)}}
+
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:18px}
+  .card h2{margin:0 0 14px;font-size:13px;font-weight:500;letter-spacing:.1em;color:var(--faint)}
+
+  .step{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .step:last-child{border-bottom:0}
+  .dot{width:18px;height:18px;border-radius:50%;border:1px solid var(--line-s);flex:none;
+       display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--faint)}
+  .step.done .dot{background:var(--ok);border-color:var(--ok);color:#fff}
+  .step.cur .dot{border-color:var(--ink);border-width:2px}
+  .step.cur{font-weight:500}
+  .step .t{margin-left:auto;font-size:12px;color:var(--faint)}
+
+  label{display:block;font-size:12.5px;color:var(--sub);margin-bottom:6px}
+  select,input[type=text]{width:100%;padding:9px 10px;border:1px solid var(--line-s);
+    border-radius:8px;font-family:inherit;font-size:14px;background:#fff;color:var(--ink)}
+  input[type=file]{font-size:13px;color:var(--sub)}
+  #pad{border:1px solid var(--line-s);border-radius:8px;background:#fff;touch-action:none;
+       width:100%;height:150px;display:block}
+  .tools{display:flex;gap:14px;margin-top:10px;align-items:center;flex-wrap:wrap}
+  .link{background:none;border:0;padding:0;font-family:inherit;font-size:13px;color:var(--sub);
+        cursor:pointer;border-bottom:1px solid var(--line-s)}
+  .link:hover{color:var(--ink);border-bottom-color:var(--ink)}
+  .pmeta{font-size:12px;color:var(--faint);line-height:1.6;margin-bottom:10px}
+  .pitem{border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:8px}
+  .pitem .no{font-weight:600;font-size:14px}
+  .pitem .sub{font-size:12px;color:var(--faint);margin-top:3px}
+  .pitem .act{margin-top:8px;display:flex;gap:10px;align-items:center}
+  .pitem.mine{border-color:#0b5c47;background:#f6fbf9}
+  .btn{border:0;border-radius:8px;padding:11px 20px;font-size:14px;font-weight:600;
+       cursor:pointer;font-family:inherit}
+  .btn-main{background:var(--ink);color:#fff;width:100%;margin-top:16px}
+  .btn-main:disabled{opacity:.4;cursor:not-allowed}
+
+  .msg{font-size:13px;margin-top:12px;padding:10px 12px;border-radius:8px;background:#f5f5f3;color:var(--sub)}
+  .msg.ok{background:#eaf5f1;color:var(--ok)}
+  .msg.err{background:#fbecec;color:var(--danger)}
+  .msg.warn{background:#fdf6ec;color:#8a4f0d}
+
+  .viewer{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;overflow:auto}
+  .vhint{font-size:12.5px;color:var(--faint);margin-bottom:10px}
+  .pgwrap{position:relative;margin:0 auto 12px;width:fit-content;max-width:100%}
+  canvas.pg{display:block;border:1px solid var(--line);max-width:100%;height:auto}
+  .hl{position:absolute;border:2px solid #b8791f;background:rgba(184,121,31,.10);pointer-events:none}
+  .hl span{position:absolute;top:-19px;left:0;font-size:11px;background:#b8791f;color:#fff;
+           padding:1px 6px;border-radius:4px;white-space:nowrap}
+  .hl.me{border-color:var(--ok);background:rgba(11,92,71,.12)}
+  .hl.me span{background:var(--ok)}
+  .mchk{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--sub);
+    margin-bottom:10px;cursor:pointer}
+  .mchk input{width:auto;margin-top:3px}
+  .mhint{font-size:12px;line-height:1.6;color:#8a4f0d;background:#fdf6ec;
+    border:1px solid #8a4f0d;border-radius:8px;padding:10px 12px;margin-bottom:14px}
+  .drop{border:1px dashed var(--line-s);border-radius:10px;padding:30px;text-align:center;
+        color:var(--sub);font-size:14px}
+  .done{border:1px solid var(--ok);background:#f4faf8;border-radius:10px;padding:16px;
+        margin-top:16px;font-size:13.5px;display:none}
+  .done.show{display:block}
+  .done b{font-weight:500}
+</style>
+<link rel="stylesheet" href="assets/app.css"></head>
+<body>
+<script>
+var BOOT={};
+try{ BOOT=JSON.parse(document.body.dataset.boot||'{}'); }catch(e){ BOOT={}; }
+</script>
+
+<div class="top">
+  <a href="index.html">← 填單</a><b>接續簽核</b><span id="modeNote"></span>
+  <span class="meta" id="meta">請上傳你收到的核銷單 PDF</span>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="card">
+      <h2>簽核順序</h2>
+      <div style="margin-bottom:14px">
+        <label>單別</label>
+        <select id="formType" onchange="onFormType()"></select>
+      </div>
+      <div id="steps"></div>
+    </div>
+
+    <div class="card" id="pendingCard" style="display:none">
+      <h2>待簽清單</h2>
+      <div class="pmeta">財務長與會長不需要別人傳檔，直接從這裡載入雲端最新版本簽核。</div>
+      <div id="pendingList"><div class="pmeta">載入中…</div></div>
+      <button class="link" onclick="loadPending()" style="margin-top:10px">重新整理</button>
+    </div>
+
+    <div class="card">
+      <h2>我的簽核</h2>
+      <div style="margin-bottom:14px">
+        <label>核銷單號</label>
+        <input type="text" id="docNo" placeholder="輸入單號"><label for="signAccess" style="margin-top:10px">簽核碼</label><input type="password" id="signAccess" autocomplete="off"><button class="btn" onclick="openLatest()" style="margin-top:10px">載入最新版本</button>
+      </div>
+      <div style="margin-bottom:16px">
+        <label>簽核身分</label>
+        <select id="role" onchange="onRole()"></select>
+      </div>
+      <label class="mchk">
+        <input type="checkbox" id="manualChk" onchange="toggleManual()">
+        手動指定蓋章位置（文件沒有文字層時使用）
+      </label>
+      <div class="mhint" id="manualHint" style="display:none">
+        這份 PDF 偵測不到文字。Windows 請改用 Chrome 列印視窗中的「另存為 PDF」，
+        不要選「Microsoft Print to PDF」，否則中文會被轉成圖形。
+        這次可以先在右側文件上點選位置完成簽章。
+      </div>
+      <label>簽名：在框內手寫，或改用上傳圖片</label>
+      <canvas id="pad" width="600" height="300"></canvas>
+      <div class="tools">
+        <button class="link" onclick="clearPad()">清除</button>
+        <input type="file" id="sigFile" accept="image/*" onchange="useImg(this)">
+      </div>
+      <button class="btn btn-main" id="goBtn" onclick="signIt()" disabled>蓋章並下載</button>
+      <div class="msg" id="msg">尚未載入文件</div>
+
+      <div class="done" id="done">
+        <div style="margin-bottom:6px"><b>已完成你這一關</b></div>
+        <div id="doneMsg"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="viewer">
+    <div class="vhint">橘框為偵測到的簽核欄位，綠框是你這次要蓋的位置</div>
+    <div id="pages">
+      <div class="drop">
+        <div>上傳核銷單 PDF</div>
+        <div style="margin-top:12px"><input type="file" accept="application/pdf" onchange="loadLocal(this)"></div>
+        <div style="font-size:12px;margin-top:10px;color:var(--faint)">
+          可以是申請人剛產生的原始檔，也可以是前一關簽好後傳給你的版本
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script><script src="assets/core.js"></script><script src="assets/storage.js"></script><script src="assets/transport.js"></script><script>
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+let ROLES=[], formTypes=[], pdfBytes=null, anchors=[], signedRoles={}, fileName='核銷單.pdf';
+const $=id=>document.getElementById(id);
+function setMsg(t,c){const m=$('msg');m.textContent=t;m.className='msg'+(c?' '+c:'');}
+/** 沙箱 iframe 內相對連結會失效，一律用伺服器注入的網址 */
+function pageUrl(p){
+  const base=(typeof BOOT!=='undefined'&&BOOT.appUrl)?BOOT.appUrl:'';
+  return base? base+'?page='+p : '?page='+p;
+}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+const FALLBACK=[
+  {key:'GENERAL',label:'一般核銷（計劃／行政支出）',roles:['部長','副會長','會長','財務長']},
+  {key:'PE',label:'SCOPE 專業交換（PE）',roles:['LO','NO','財務長']},
+  {key:'RE',label:'SCORE 研究交換（RE）',roles:['LO','NO','財務長']}
+];
+
+(function init(){
+  const online=(typeof google!=='undefined'&&google.script);
+  if(online){
+    google.script.run.withSuccessHandler(list=>{fillTypes(list);})
+      .withFailureHandler(()=>fillTypes(FALLBACK)).getFormTypes();
+    google.script.run.withSuccessHandler(r=>{ if(r&&r.length){CLOUD_ROLES=r;} onRole(); })
+      .withFailureHandler(()=>{}).getCloudRoles();
+  }else{
+    fillTypes(FALLBACK);
+  }
+})();
+
+function fillTypes(list){
+  /* 沒有簽核鏈的單別（例如退費申請單）不會進簽核流程，不列入選單 */
+  formTypes=(list||[]).filter(f=>f.roles&&f.roles.length);
+  if(!formTypes.length) formTypes=FALLBACK;
+  list=formTypes;
+  $('formType').innerHTML=list.map(f=>'<option value="'+f.key+'">'+esc(f.label)+'</option>').join('');
+  onFormType();
+}
+function currentType(){ return formTypes.find(f=>f.key===$('formType').value)||formTypes[0]; }
+
+function onFormType(){
+  const f=currentType(); if(!f)return;
+  ROLES=f.roles.slice();
+  $('role').innerHTML=ROLES.map(r=>'<option>'+esc(r)+'</option>').join('');
+  if($('pendingCard')) onRole();
+  renderSteps();
+  if(pdfBytes) loadPdf();
+  else drawHighlights();
+}
+
+let CLOUD_ROLES=['財務長','會長'], pendingCache=[];
+function isCloudRole(){ return CLOUD_ROLES.indexOf($('role').value)>=0; }
+
+function onRole(){
+  drawHighlights();
+  const on=isCloudRole();
+  $('pendingCard').style.display=on?'block':'none';
+  $('goBtn').textContent=on?'蓋章並存回雲端':'蓋章並下載';
+  if(on&&!pendingCache.length) loadPending();
+}
+
+function loadPending(){
+  if(typeof google==='undefined'||!google.script){
+    $('pendingList').innerHTML='<div class="pmeta">預覽模式：未連線後端</div>';
+    return;
+  }
+  $('pendingList').innerHTML='<div class="pmeta">載入中…</div>';
+  google.script.run
+    .withSuccessHandler(list=>{ pendingCache=list||[]; renderPending(); })
+    .withFailureHandler(e=>{ $('pendingList').innerHTML='<div class="pmeta">讀取失敗：'+esc(e.message)+'</div>'; })
+    .listPending();
+}
+
+function renderPending(){
+  const me=$('role').value;
+  if(!pendingCache.length){
+    $('pendingList').innerHTML='<div class="pmeta">目前沒有待簽的單據。</div>';
+    return;
+  }
+  $('pendingList').innerHTML=pendingCache.map(p=>{
+    const prog=p.roles.map(r=>(p.signed[r]?'✓':'○')+r).join('　');
+    const mine=(p.next===me);
+    const btn=p.hasFile
+      ? '<button class="link" onclick="loadCloud(\''+esc(p.docNo)+'\')">載入並簽核</button>'
+      : '<span class="pmeta" style="margin:0">尚無雲端檔案，請等前一關簽完或自行上傳</span>';
+    return '<div class="pitem'+(mine?' mine':'')+'">'
+      +'<div class="no">'+esc(p.docNo)+'　<span class="pmeta" style="margin:0">'+esc(p.label)+'</span></div>'
+      +'<div class="sub">'+esc(p.dept)+(p.who?'　'+esc(p.who):'')+(p.fileDate?'　'+esc(p.fileDate):'')+'</div>'
+      +'<div class="sub">'+esc(prog)+'　→ 下一關：<b>'+esc(p.next)+'</b></div>'
+      +'<div class="act">'+btn+'</div></div>';
+  }).join('');
+}
+
+function loadCloud(no){
+  setMsg('從雲端載入 '+no+'…');
+  google.script.run
+    .withSuccessHandler(async r=>{
+      pdfBytes=b64ToBytes(r.b64);
+      fileName=r.name;
+      $('docNo').value=no;
+      $('meta').textContent=r.name+'（雲端最新版）';
+      $('done').classList.remove('show');
+      const hit=pendingCache.find(p=>p.docNo===no);
+      if(hit&&hit.formType&&$('formType').value!==hit.formType){
+        $('formType').value=hit.formType; onFormType();
+      }
+      signedRoles=(hit&&hit.signed)||{};
+      $('pages').innerHTML='';
+      await loadPdf();
+    })
+    .withFailureHandler(e=>setMsg('載入失敗：'+e.message,'err'))
+    .getSignedPdf(no);
+}
+
+function renderSteps(){
+  const me=$('role').value;
+  $('steps').innerHTML=ROLES.map(r=>{
+    const at=signedRoles[r];
+    const cls=at?'done':(r===me?'cur':'');
+    return '<div class="step '+cls+'"><span class="dot">'+(at?'✓':'')+'</span>'+esc(r)
+      +'<span class="t">'+(at?esc(at):(r===me?'你這一關':''))+'</span></div>';
+  }).join('');
+}
+
+function b64ToBytes(b64){
+  const bin=atob(b64); const a=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) a[i]=bin.charCodeAt(i);
+  return a;
+}
+function bytesToB64(bytes){
+  let s=''; const chunk=0x8000;
+  for(let i=0;i<bytes.length;i+=chunk) s+=String.fromCharCode.apply(null,bytes.subarray(i,i+chunk));
+  return btoa(s);
+}
+
+async function loadLocal(input){
+  const f=input.files[0]; if(!f)return;
+  pdfBytes=new Uint8Array(await f.arrayBuffer());
+  fileName=f.name;
+  $('meta').textContent=f.name;
+  $('done').classList.remove('show');
+  $('pages').innerHTML='';
+  await loadPdf();
+}
+
+/* 簽核格尺寸：與產生 PDF 時的簽名列同高（22mm），標題與格子之間約 8pt */
+const SIG_ROW_H = 22 * 2.8346;
+const SIG_GAP = 8;
+
+async function loadPdf(){
+  setMsg('解析文件與簽核欄位…');
+  anchors=[];
+  const candidates=[];
+  $('pages').innerHTML='';
+  const doc=await pdfjsLib.getDocument({isEvalSupported:false,data:pdfBytes.slice(0)}).promise;
+  let docNoFound='';
+
+  for(let p=1;p<=doc.numPages;p++){
+    const page=await doc.getPage(p);
+    const vp=page.getViewport({scale:1});
+    const tc=await page.getTextContent();
+
+    /* 從文件內容抓核銷單號（「核銷單號」右側那格） */
+    if(!docNoFound){
+      const idx=tc.items.findIndex(it=>(it.str||'').indexOf('核銷單號')>=0);
+      if(idx>=0){
+        for(let k=idx+1;k<Math.min(idx+5,tc.items.length);k++){
+          const s=(tc.items[k].str||'').trim();
+          if(s&&s.length<=24&&!/核銷單號/.test(s)){docNoFound=s;break;}
+        }
+      }
+    }
+
+    /* 找簽核角色字樣。同一頁可能有干擾（例如注意事項提到「財務長信箱」）， */
+    /* 所以先蒐集各頁的候選列，稍後挑出角色數最多的那一列當作簽核列。 */
+    const found=[];
+    tc.items.forEach(it=>{
+      const s=(it.str||'').trim();
+      if(!s)return;
+      let role=ROLES.find(r=>s===r);
+      if(!role) role=ROLES.find(r=>r.length>=2&&s.indexOf(r)>=0);
+      if(!role)return;
+      const x=it.transform[4],y=it.transform[5],w=it.width||20;
+      found.push({role:role,x:x,y:y,w:w,cx:x+w/2});
+    });
+
+    if(found.length){
+      /* 依 y 座標分列（同一列的標題 y 相近） */
+      const lines=[];
+      found.forEach(f=>{
+        let L=lines.find(l=>Math.abs(l.y-f.y)<6);
+        if(!L){ L={y:f.y,items:[]}; lines.push(L); }
+        L.items.push(f);
+      });
+      lines.forEach(L=>{
+        const group=L.items.slice().sort((a,b)=>a.cx-b.cx);
+        candidates.push({page:p, group:group, baseY:L.y, ph:vp.height,
+                         distinct:new Set(group.map(g=>g.role)).size});
+      });
+    }
+
+    const scale=Math.min(720/vp.width,1.4);
+    const v2=page.getViewport({scale:scale});
+    const wrap=document.createElement('div'); wrap.className='pgwrap';
+    const cv=document.createElement('canvas'); cv.className='pg';
+    cv.width=v2.width; cv.height=v2.height;
+    wrap.appendChild(cv); $('pages').appendChild(wrap);
+    await page.render({canvasContext:cv.getContext('2d'),viewport:v2}).promise;
+    /* 存未縮放的頁面尺寸；畫框時再依畫布「實際顯示寬度」換算， */
+    /* 否則 canvas 被 max-width 縮小後框會整片偏移。 */
+    wrap.dataset.page=p; wrap.dataset.pw=vp.width; wrap.dataset.ph=vp.height;
+    wrap.addEventListener('click',pageClick);
+  }
+
+  /* 挑出真正的簽核列：角色數最多的那一列（通常在第二頁）， */
+  /* 這樣「注意事項」裡零星提到的「財務長信箱」就不會被誤判。 */
+  if(candidates.length){
+    candidates.sort((a,b)=> b.distinct-a.distinct || b.page-a.page );
+    const best=candidates[0];
+
+    /* 欄寬由相鄰標題的中心距推算（標題在各欄置中，中心距即欄寬） */
+    let gap=0;
+    for(let i=1;i<best.group.length;i++) gap=Math.max(gap,best.group[i].cx-best.group[i-1].cx);
+    if(!gap) gap=110;
+    const boxW=gap*0.88;
+
+    /* 垂直位置：標題下方固定一個簽名列高 */
+    const boxTop=best.baseY-SIG_GAP;
+    const boxBottom=boxTop-SIG_ROW_H;
+
+    const seen={};
+    best.group.forEach(f=>{
+      if(seen[f.role])return;
+      seen[f.role]=1;
+      anchors.push({role:f.role,page:best.page,
+        boxX:f.cx-boxW/2, boxY:boxBottom, boxW:boxW, boxH:SIG_ROW_H, ph:best.ph});
+    });
+  }
+
+  if(docNoFound&&!$('docNo').value) $('docNo').value=docNoFound;
+  drawHighlights();
+  loadProgress();
+
+  if(!anchors.length){
+    /* 有些 PDF（例如 Windows 的「Microsoft Print to PDF」）會把中文轉成圖形，
+       沒有文字層就抓不到角色字樣。這時改成手動點選位置。 */
+    manualMode=true;
+    manualSpot=null;
+    $('manualChk').checked=true;
+    $('manualHint').style.display='block';
+    document.querySelectorAll('.pgwrap').forEach(w=>{ w.style.cursor='crosshair'; });
+    setMsg('這份 PDF 沒有可辨識的文字（常見於 Microsoft Print to PDF）。'
+      +'請直接在右側文件上點一下你要蓋章的位置。','warn');
+    $('goBtn').disabled=true;
+  }else{
+    manualMode=false;
+    manualSpot=null;
+    $('manualChk').checked=false;
+    $('manualHint').style.display='none';
+    setMsg('已偵測到：'+anchors.map(a=>a.role).join('、')+'　請簽名後按「蓋章並下載」');
+    $('goBtn').disabled=false;
+  }
+}
+
+/* ── 手動指定蓋章位置（偵測不到文字時的退路） ── */
+let manualMode=false, manualSpot=null;
+
+function pageClick(e){
+  if(!manualMode) return;
+  const wrap=e.currentTarget;
+  const cv=wrap.querySelector('canvas');
+  const sc=cv.clientWidth/(+wrap.dataset.pw);
+  const r=cv.getBoundingClientRect();
+  const px=(e.clientX-r.left)/sc;
+  const py=(e.clientY-r.top)/sc;
+  const ph=+wrap.dataset.ph;
+
+  /* 以點擊處為中心，沿用與系統產生的單據相同的框高 */
+  const boxW=SIG_ROW_H*2.2, boxH=SIG_ROW_H;
+  manualSpot={ page:+wrap.dataset.page, ph:ph,
+    boxX:px-boxW/2, boxY:ph-py-boxH/2, boxW:boxW, boxH:boxH };
+  drawManual();
+  $('goBtn').disabled=false;
+  setMsg('已指定蓋章位置，簽名後按下方按鈕；想換位置再點一次即可','ok');
+}
+
+function drawManual(){
+  document.querySelectorAll('.hl.manual').forEach(e=>e.remove());
+  if(!manualSpot)return;
+  const wrap=[...document.querySelectorAll('.pgwrap')].find(w=>+w.dataset.page===manualSpot.page);
+  if(!wrap)return;
+  const cv=wrap.querySelector('canvas');
+  const sc=cv.clientWidth/(+wrap.dataset.pw);
+  const d=document.createElement('div');
+  d.className='hl me manual';
+  d.style.left=(manualSpot.boxX*sc)+'px';
+  d.style.top=((manualSpot.ph-manualSpot.boxY-manualSpot.boxH)*sc)+'px';
+  d.style.width=(manualSpot.boxW*sc)+'px';
+  d.style.height=(manualSpot.boxH*sc)+'px';
+  d.innerHTML='<span>'+esc($('role').value)+'　手動指定</span>';
+  wrap.appendChild(d);
+}
+
+/** 讓使用者即使偵測成功，也能改成自己點位置 */
+function toggleManual(){
+  manualMode=$('manualChk').checked;
+  manualSpot=null;
+  drawManual();
+  document.querySelectorAll('.pgwrap').forEach(w=>{
+    w.style.cursor=manualMode?'crosshair':'';
+  });
+  if(manualMode){
+    setMsg('請在右側文件上點一下要蓋章的位置','warn');
+    $('goBtn').disabled=true;
+  }else{
+    $('goBtn').disabled=!anchors.length;
+    setMsg(anchors.length?'已回到自動偵測的位置':'找不到簽核欄位，請改用手動指定','');
+  }
+}
+
+function loadProgress(){
+  const no=$('docNo').value.trim();
+  if(!no||typeof google==='undefined'||!google.script)return;
+  google.script.run.withSuccessHandler(m=>{signedRoles=m||{};renderSteps();})
+    .withFailureHandler(()=>{}).getSignLog(no);
+}
+
+function drawHighlights(){
+  document.querySelectorAll('.hl').forEach(e=>e.remove());
+  const me=$('role').value;
+  anchors.forEach(a=>{
+    const wrap=[...document.querySelectorAll('.pgwrap')].find(w=>+w.dataset.page===a.page);
+    if(!wrap)return;
+    const cv=wrap.querySelector('canvas');
+    /* 以畫布實際顯示寬度換算，才會與螢幕上看到的頁面對齊 */
+    const sc=cv.clientWidth/(+wrap.dataset.pw);
+    const ph=+wrap.dataset.ph;
+    const d=document.createElement('div');
+    d.className='hl'+(a.role===me?' me':'');
+    d.style.left=(a.boxX*sc)+'px';
+    d.style.top=((ph-a.boxY-a.boxH)*sc)+'px';
+    d.style.width=(a.boxW*sc)+'px';
+    d.style.height=(a.boxH*sc)+'px';
+    d.innerHTML='<span>'+esc(a.role)+(a.role===me?'　你的位置':'')+'</span>';
+    wrap.appendChild(d);
+  });
+  renderSteps();
+}
+
+/* 視窗縮放時手動框也要跟著重畫 */
+window.addEventListener('resize',()=>{
+  if(anchors.length) drawHighlights();
+  if(manualSpot) drawManual();
+});
+
+/* ── 簽名板 ── */
+let ctx,drawing=false,hasInk=false;
+(function pad(){
+  const c=$('pad'); ctx=c.getContext('2d');
+  ctx.lineWidth=3;ctx.lineCap='round';ctx.strokeStyle='#111';
+  const pos=e=>{const r=c.getBoundingClientRect();const t=e.touches?e.touches[0]:e;
+    return {x:(t.clientX-r.left)*(c.width/r.width),y:(t.clientY-r.top)*(c.height/r.height)};};
+  const dn=e=>{drawing=true;const p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y);e.preventDefault();};
+  const mv=e=>{if(!drawing)return;const p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke();hasInk=true;e.preventDefault();};
+  const up=()=>{drawing=false;};
+
+  /* 防手掌誤觸：只要用過一次觸控筆，之後就忽略手指與手掌的觸控。
+     沒有筆的裝置（桌機滑鼠、純手指）行為不變。 */
+  let penSeen=false;
+  const activeId=()=>penSeen;
+  if(window.PointerEvent){
+    let id=null;
+    c.addEventListener('pointerdown',e=>{
+      if(e.pointerType==='pen'){ penSeen=true; }
+      else if(penSeen&&e.pointerType==='touch'){ return; }
+      if(id!==null) return;
+      id=e.pointerId;
+      try{ c.setPointerCapture(id); }catch(_){}
+      dn(e);
+    });
+    c.addEventListener('pointermove',e=>{ if(e.pointerId===id) mv(e); });
+    const end=e=>{ if(e.pointerId===id){ id=null; up(); } };
+    c.addEventListener('pointerup',end);
+    c.addEventListener('pointercancel',end);
+    c.addEventListener('pointerleave',end);
+  }else{
+    c.addEventListener('mousedown',dn);c.addEventListener('mousemove',mv);window.addEventListener('mouseup',up);
+    c.addEventListener('touchstart',dn,{passive:false});c.addEventListener('touchmove',mv,{passive:false});
+    c.addEventListener('touchend',up);
+  }
+
+  /* 提示：偵測到觸控筆時告知使用者已啟用防誤觸 */
+  c.addEventListener('pointerdown',e=>{
+    if(e.pointerType==='pen'&&!c.dataset.penMsg){
+      c.dataset.penMsg='1';
+      setMsg('已偵測到觸控筆，手掌觸碰不會畫上去','ok');
+    }
+  });
+})();
+function clearPad(){const c=$('pad');ctx.clearRect(0,0,c.width,c.height);hasInk=false;}
+function useImg(input){
+  const f=input.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    const img=new Image();
+    img.onload=()=>{
+      const c=$('pad');ctx.clearRect(0,0,c.width,c.height);
+      const s=Math.min(c.width/img.width,c.height/img.height);
+      ctx.drawImage(img,(c.width-img.width*s)/2,(c.height-img.height*s)/2,img.width*s,img.height*s);
+      hasInk=true;
+    };
+    img.src=e.target.result;
+  };
+  r.readAsDataURL(f);
+}
+
+/** 去白底並裁去空白，讓不同拍照距離的簽章蓋出來大小一致 */
+function padPng(){
+  const src=$('pad');
+  const c=document.createElement('canvas');c.width=src.width;c.height=src.height;
+  const g=c.getContext('2d'); g.drawImage(src,0,0);
+  const im=g.getImageData(0,0,c.width,c.height), d=im.data;
+  let x0=c.width,y0=c.height,x1=0,y1=0,found=false;
+  for(let y=0;y<c.height;y++){
+    for(let x=0;x<c.width;x++){
+      const i=(y*c.width+x)*4;
+      if(d[i]>235&&d[i+1]>235&&d[i+2]>235){d[i+3]=0;continue;}
+      if(d[i+3]>40){
+        found=true;
+        if(x<x0)x0=x; if(x>x1)x1=x;
+        if(y<y0)y0=y; if(y>y1)y1=y;
+      }
+    }
+  }
+  g.putImageData(im,0,0);
+  if(!found) return c.toDataURL('image/png');
+  const pad=Math.round(Math.max(x1-x0,y1-y0)*0.03);
+  x0=Math.max(0,x0-pad);y0=Math.max(0,y0-pad);
+  x1=Math.min(c.width-1,x1+pad);y1=Math.min(c.height-1,y1+pad);
+  const w=x1-x0+1,h=y1-y0+1;
+  const o=document.createElement('canvas');o.width=w;o.height=h;
+  o.getContext('2d').drawImage(c,x0,y0,w,h,0,0,w,h);
+  return o.toDataURL('image/png');
+}
+
+function download(bytes,name){
+  const blob=new Blob([bytes],{type:'application/pdf'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=name; document.body.appendChild(a); a.click();
+  setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1500);
+}
+
+async function signIt(){
+  const role=$('role').value;
+  if(!hasInk){setMsg('請先手寫或上傳簽名','err');return;}
+  const a = manualMode ? manualSpot : anchors.find(x=>x.role===role);
+  if(!a){
+    setMsg(manualMode ? '請先在文件上點一下要蓋章的位置'
+                      : '找不到「'+role+'」的簽核欄位','err');
+    return;
+  }
+
+  $('goBtn').disabled=true;
+  setMsg('正在蓋章…');
+  try{
+    const png=padPng();
+    const doc=await PDFLib.PDFDocument.load(pdfBytes.slice(0));
+    const img=await doc.embedPng(png);
+    const page=doc.getPages()[a.page-1];
+
+    /* 固定高度 15mm（≈42.5pt），超出格子才等比縮小 */
+    const TARGET_H=15*2.8346;
+    let h=TARGET_H, w=img.width*(h/img.height);
+    const maxW=a.boxW-6, maxH=a.boxH-4;
+    if(w>maxW){const k=maxW/w;w*=k;h*=k;}
+    if(h>maxH){const k=maxH/h;w*=k;h*=k;}
+
+    page.drawImage(img,{x:a.boxX+(a.boxW-w)/2, y:a.boxY+(a.boxH-h)/2, width:w, height:h});
+
+    const out=await doc.save();
+    pdfBytes=new Uint8Array(out);
+
+    const base=fileName.replace(/\.pdf$/i,'').replace(/_已簽.*$/,'');
+    const outName=base+'_已簽'+role+'.pdf';
+    const cloud=isCloudRole();
+    if(!cloud) download(out,outName);
+
+    const idx=ROLES.indexOf(role);
+    const next=idx>=0&&idx<ROLES.length-1?ROLES[idx+1]:'';
+    signedRoles[role]='剛完成';
+    renderSteps();
+    $('done').classList.add('show');
+
+    const finalHint='這是最後一關，簽核流程到此完成。';
+    if(cloud){
+      $('doneMsg').innerHTML = next
+        ? '已存回雲端，下一關的 <b>'+esc(next)+'</b> 可以直接從系統載入，不必傳檔。'
+        : '已存回雲端。'+finalHint;
+    }else{
+      $('doneMsg').innerHTML = next
+        ? '已下載 <b>'+esc(outName)+'</b>，請把這個檔案傳給下一關的 <b>'+esc(next)+'</b>。'
+        : '已下載 <b>'+esc(outName)+'</b>，'+finalHint;
+    }
+
+    if(typeof google!=='undefined'&&google.script){
+      setMsg(cloud?'上傳雲端中…':'已下載，正在寫入雲端紀錄…');
+      google.script.run
+        .withSuccessHandler(r=>{
+          setMsg(r.message+(cloud?'，已存回雲端':'，並已存入雲端硬碟備查'),'ok');
+          if(cloud) loadPending();
+        })
+        .withFailureHandler(e=>setMsg((cloud?'存回雲端失敗：':'已下載，但雲端備查紀錄失敗：')+e.message,'err'))
+        .logSignature({docNo:$('docNo').value.trim(),role:role,
+                       filename:base,pdfBase64:bytesToB64(pdfBytes)});
+    }else{
+      setMsg('已蓋章（預覽模式，未寫入雲端紀錄）','ok');
+    }
+    $('goBtn').disabled=false;
+  }catch(err){
+    setMsg('蓋章失敗：'+err.message,'err');
+    $('goBtn').disabled=false;
+  }
+}
+</script>
+<script src="assets/sign-app.js"></script></body>
+</html>

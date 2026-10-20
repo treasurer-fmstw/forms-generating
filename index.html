@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<title>單據工作台 · FMSTW</title><meta name="referrer" content="no-referrer">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<link rel="stylesheet" href="assets/forms.css"><link rel="stylesheet" href="assets/app.css">
+</head>
+<body><header class="site-header"><a href="index.html" class="wordmark">FMSTW <span>單據工作台</span></a><nav aria-label="主要導覽"><a href="index.html" aria-current="page">填寫單據</a><a href="sign.html">接續簽核</a><a href="admin.html">管理</a></nav></header><div class="mode-note" id="modeNote" role="status">正在準備本機儲存空間…</div>
+
+<div class="wrap">
+
+  <!-- 步驟一：選單別 -->
+  <div id="chooser">
+    <h1>單據系統</h1><section id="recentDrafts" aria-label="繼續填寫"></section>
+
+    <div class="grp"><span class="fam clr">核銷</span></div>
+    <div class="list">
+      <button class="opt" data-type="GENERAL" onclick="chooseType('GENERAL')">
+        <span class="t">一般核銷</span><span class="code">A／P</span>
+      </button>
+      <button class="opt" data-type="PE" onclick="chooseType('PE')">
+        <span class="t">SCOPE 專業交換</span><span class="code">PE</span>
+      </button>
+      <button class="opt" data-type="RE" onclick="chooseType('RE')">
+        <span class="t">SCORE 研究交換</span><span class="code">RE</span>
+      </button>
+    </div>
+
+    <div class="grp"><span class="fam adv">預支</span></div>
+    <div class="list">
+      <button class="opt" data-type="ADVANCE" onclick="chooseType('ADVANCE')">
+        <span class="t">預支單（SCOPE／SCORE）</span><span class="code">L</span>
+      </button>
+      <button class="opt" data-type="ADVG" onclick="chooseType('ADVG')">
+        <span class="t">經費預支單（行政／計畫）</span><span class="code">L</span>
+      </button>
+    </div>
+
+    <div class="grp"><span class="fam ref">退費</span></div>
+    <div class="list">
+      <button class="opt" data-type="REFUND" onclick="chooseType('REFUND')">
+        <span class="t">退費申請單</span><span class="code">R</span>
+      </button>
+    </div>
+    <div class="grp"><span class="fam">退件重送</span></div>
+    <div class="reopen">
+      <div class="rnote">單據被退回時，把原本填的內容叫回來修改。修改後建立新版本，單號不變；已簽舊版會保留。</div>
+      <div class="rrow">
+        <input id="reDocNo" aria-label="單號" placeholder="輸入單號，例如 115PEA01"><input id="accessCode" type="password" aria-label="單據修改碼" placeholder="修改碼（專屬連結會自動帶入）">
+        <button class="link" onclick="openRecord()">載入</button>
+      </div>
+      <div class="rrow">
+        <label class="rfile">或從 PDF 找回單號（仍須存取碼）
+          <input type="file" accept="application/pdf" onchange="pickReturned(this)" hidden>
+        </label>
+        <span class="rnote" id="reHint"></span>
+      </div>
+    </div>
+
+    <a class="signbar" id="signLink" href="#" target="_blank" rel="noopener">
+      <span>
+        <span class="t">前往簽核頁</span><br>
+        <span class="d">上傳收到的單據蓋章，或從待簽清單直接簽核</span>
+      </span>
+      <span class="go">SIGN</span>
+    </a>
+
+    <div class="signlink" style="margin-top:18px"><span id="jsFlag" style="color:#9c2626">正在載入</span><br><span id="clickErr" style="color:#9c2626"></span></div>
+  </div>
+
+  <!-- 步驟二：填寫 -->
+  <div id="form" style="display:none">
+    <h1 id="title">核銷封面</h1>
+    <div class="typebar">
+      <span class="fam" id="famTag"></span>
+      <span class="now" id="typeNow"></span>
+      <span class="rule" id="typeRule"></span>
+      <button onclick="backToChooser()">更換類別</button>
+    </div>
+
+    <!-- 一般核銷專用 -->
+    <section id="secGeneral" style="display:none">
+      <div class="sec-label">支出別</div>
+      <div class="f" style="margin-bottom:24px">
+        <label class="req">請擇一填報（每份核銷單以申報一項為限）</label>
+        <div class="radios">
+          <label><input type="radio" name="et" value="P" onchange="onExpenseType()">計劃支出（P）</label>
+          <label><input type="radio" name="et" value="A" onchange="onExpenseType()">行政支出（A）</label>
+        </div>
+      </div>
+      <div class="row c1 f" id="boxP" style="display:none">
+        <div><label class="req">計劃名稱</label><input id="projectName"></div>
+      </div>
+      <div id="boxA" style="display:none">
+        <div class="f" style="margin-bottom:24px">
+          <label class="req">行政支出類別</label>
+          <div class="radios">
+            <label><input type="radio" name="at" value="幹部工作費" onchange="onAdminType()">幹部工作費</label>
+            <label><input type="radio" name="at" value="其他行政支出" onchange="onAdminType()">其他行政支出</label>
+          </div>
+        </div>
+        <div class="row c1 f" id="boxAOther" style="display:none">
+          <div><label class="req">其他行政支出說明</label><input id="adminOther"></div>
+        </div>
+      </div>
+      <div class="row c2 f">
+        <div><label class="req">部門職稱</label><input id="deptTitle"></div>
+        <div><label class="req">幹部姓名</label><input id="staffName"></div>
+      </div>
+      <div class="row c2 f">
+        <div><label class="req">預算科目</label><input id="budgetCodeG"></div>
+        <div><label class="req">核銷單號</label><input id="docNoG"></div>
+      </div>
+      <div class="row c1 f">
+        <div><label class="req">預算名稱</label><input id="budgetNameG"></div>
+      </div>
+    </section>
+
+    <!-- 退費單專用 -->
+    <section id="secRefund" style="display:none">
+      <div class="sec-label">活動資訊</div>
+      <div class="row c2 f">
+        <div><label class="req">活動名稱</label><input id="eventName"></div>
+        <div><label class="req">退款原因</label><input id="refundReason"></div>
+      </div>
+      <div class="row c3 f">
+        <div><label class="req">部門</label><input id="deptR"></div>
+        <div><label class="req">負責幹部</label><input id="staffR"></div>
+        <div><label class="req">連絡電話</label><input id="phoneR"></div>
+      </div>
+      <div class="row c2 f">
+        <div><label class="req">退費單號</label><input id="docNoR"></div>
+        <div><label>填單日期</label><input id="fileDateR" type="date"></div>
+      </div>
+
+      <div class="sec-label" style="margin-top:34px">退款方式</div>
+      <div class="f" style="margin-bottom:24px">
+        <label class="req">請擇一</label>
+        <div class="radios">
+          <label><input type="radio" name="rm" value="整筆退給負責幹部" onchange="onRefundMode()">整筆退給負責幹部</label>
+          <label><input type="radio" name="rm" value="分別退給報名者" onchange="onRefundMode()">分別退給各報名者</label>
+        </div>
+      </div>
+      <div class="zh" id="rmHint" style="margin-top:-12px"></div>
+      <div class="row c2 f" id="rmTotalBox" style="display:none;margin-top:20px">
+        <div><label class="req">退款總金額</label><input id="refundTotalInput" type="number" min="0" value="0"></div>
+        <div></div>
+      </div>
+    </section>
+
+    <!-- 退費明細（分別退給報名者時使用） -->
+    <section id="secRefundList" style="display:none">
+      <div class="sec-label">退款明細</div>
+      <table class="form" id="refundTable">
+        <thead><tr>
+          <th style="width:44px"></th>
+          <th style="width:15%">報名者姓名</th>
+          <th style="width:92px;text-align:right">退款金額</th>
+          <th>銀行</th>
+          <th style="width:70px">代碼</th>
+          <th>分行</th>
+          <th style="width:70px">分行代碼</th>
+          <th style="width:15%">帳號</th>
+          <th style="width:13%">戶名</th>
+          <th style="width:96px">存摺封面</th>
+          <th style="width:26px"></th>
+        </tr></thead>
+        <tbody id="refundBody"></tbody>
+      </table>
+      <button class="add" onclick="addRefundRow()">＋　新增一列</button>
+      <div class="subtotal"><span>退款總金額</span><b id="refundTotal">NT$ 0</b></div>
+    </section>
+
+    <!-- 預支單專用 -->
+    <section id="secAdvance" style="display:none">
+      <div class="sec-label" id="advSecLabel">預支單</div>
+      <div class="row c2 f">
+        <div><label class="req" id="lblAdminUse">行政用途</label><input id="adminUse"></div>
+        <div><label class="req">預支單號</label><input id="docNoA"></div>
+      </div>
+      <div class="row c2 f">
+        <div><label class="req">預支金額</label><input id="advanceAmount" type="number" min="0"></div>
+        <div><label class="req">計畫編號</label><input id="planCode"></div>
+      </div>
+      <div class="row c2 f">
+        <div><label class="req" id="lblLoNameA">LO姓名</label><input id="loNameA"></div>
+        <div id="boxLoSchoolA"><label class="req">LO學校</label><input id="loSchoolA"></div>
+      </div>
+      <div class="row c2 f">
+        <div><label class="req">連絡電話</label><input id="phone2"></div>
+        <div><label class="req" id="lblDeptA">部門</label><input id="deptA"></div>
+      </div>
+    </section>
+
+    <!-- PE / RE 專用 -->
+    <section id="secExchange" style="display:none">
+      <div class="sec-label">核銷封面</div>
+      <div class="row c2 f">
+        <div><label class="req">核銷種類</label>
+          <select id="kind" onchange="onKind()">
+            <option value="">請選擇</option>
+            <option value="行政核銷" data-et="A">行政核銷（A）</option>
+            <option value="計劃核銷" data-et="P">計劃核銷（P）</option>
+          </select>
+        </div>
+        <div><label class="req">部門</label><input id="dept"></div>
+      </div>
+      <div class="row c2 f">
+        <div><label class="req">預算科目</label><input id="budgetCode"></div>
+        <div><label class="req">核銷單號</label><input id="docNo"></div>
+      </div>
+      <div class="row c2 f">
+        <div><label class="req">LO姓名</label><input id="loName"></div>
+        <div><label class="req">LO學校</label><input id="loSchool"></div>
+      </div>
+      <div class="row c1 f">
+        <div><label class="req">預算名稱</label><input id="budgetName"></div>
+      </div>
+    </section>
+
+    <!-- PE / RE 專用：IC 名單 -->
+    <section id="secIC" style="display:none">
+      <div class="sec-label">IC 名單</div>
+      <table class="form" id="icTable">
+        <thead><tr>
+          <th style="width:44px"></th>
+          <th>姓名</th>
+          <th style="width:26px"></th>
+        </tr></thead>
+        <tbody id="icBody"></tbody>
+      </table>
+      <button class="add" onclick="addICRow()">＋　新增一位</button>
+      <div class="subtotal"><span>IC 人數</span><b id="icCount">0</b></div>
+    </section>
+
+    <section>
+      <div class="sec-label">帳戶資料</div>
+      <div class="row c3 f">
+        <div><label class="req">戶名</label><input id="acctName"></div>
+        <div><label class="req">銀行</label><input id="bank"></div>
+        <div><label class="req">分行</label><input id="branch"></div>
+      </div>
+      <div class="row c2 f">
+        <div><label class="req">銀行代碼</label><input id="bankCode"></div>
+        <div><label class="req">帳號</label><input id="acctNo"></div>
+      </div>
+      <div class="row c2 f">
+        <div><label>存摺封面影本（無則免附）</label><input id="passbook" type="file" accept="image/*" onchange="pickPassbook(this)"></div>
+        <div></div>
+      </div>
+      <img id="passbookPrev" class="preview" alt="存摺封面">
+      <div class="links">
+        <button class="link" onclick="saveBank()">儲存我的帳戶資料</button>
+        <button class="link" onclick="loadBank()">帶入已存資料</button>
+      </div>
+    </section>
+
+    <section id="secItems">
+      <div class="sec-label">支出憑證黏存單</div>
+      <div class="row c2 f">
+        <div><label>填單日期</label><input id="fileDate" type="date"></div>
+        <div>
+          <label for="voucherCount">明細筆數</label>
+          <input id="voucherCount" type="number" value="0" readonly aria-label="明細筆數，自動計算"><small>依明細自動統計，不必先填張數。</small>
+          <div style="font-size:12px;color:var(--danger);margin-top:6px" id="vcHint"></div>
+        </div>
+      </div>
+<div id="receiptDrop" class="receipt-drop" tabindex="0" role="button" aria-label="拖入憑證或按 Enter 選擇多個檔案">
+        <strong>把憑證拖到這裡</strong><span>可一次放入照片或多頁 PDF，再逐筆確認金額與用途。</span>
+        <label class="choose-files">選擇檔案<input id="batchReceipts" type="file" accept="image/*,.heic,.heif,application/pdf" multiple></label>
+      </div>
+      <div id="uploadProgress" role="status" aria-live="polite"></div><ul id="uploadErrors" aria-label="未加入的檔案"></ul>
+      <details class="bulk-tools"><summary>多筆使用相同科目或用途</summary><div class="row c2 f"><div><label for="bulkCode">共用科目編號</label><input id="bulkCode"></div><div><label for="bulkUse">共用用途</label><input id="bulkUse" placeholder="例如：交換生交通支出"></div></div><button type="button" id="applyBulk">帶入所有尚未填寫的欄位</button><small>已有內容的欄位不會被覆蓋。</small></details>
+      <table class="form" id="itemsTable">
+        <thead><tr>
+          <th style="width:44px"></th>
+          <th style="width:64px">科目編號</th>
+          <th class="catcol" style="width:92px">費用類別</th>
+          <th style="width:52px">憑證單號</th>
+          <th style="width:120px">項目名稱</th>
+          <th style="min-width:180px">用途說明</th>
+          <th style="width:78px;text-align:right">金額</th>
+          <th class="mmcol" style="width:58px">寬度<span style="font-size:11px">(mm)</span></th>
+          <th style="width:70px">影像</th>
+          <th style="width:26px"></th>
+        </tr></thead>
+        <tbody id="itemsBody"></tbody>
+      </table>
+      <button class="add" onclick="addRow()">＋　新增一列</button>
+      <label class="tabletools">
+        <input type="checkbox" id="showMm" onchange="toggleMm()">
+        顯示「實際寬度(mm)」欄　需要按實際尺寸列印憑證時才用得到
+      </label>
+      <div class="subtotal"><span>支出總金額</span><b id="grandTotal">NT$ 0</b></div>
+    </section>
+
+    <section id="secAmount">
+      <div class="sec-label">資金核對</div><div class="row c2 f"><div><label for="claimAmount">本次申請核銷金額</label><input id="claimAmount" type="number" min="0" placeholder="未填時依支出明細總額" oninput="calc()"><small>例如實際支出 40,000、只能核銷 30,000，這裡填 30,000。</small></div><div><label for="claimNote">不申請核銷差額說明</label><input id="claimNote" placeholder="例如：計畫核銷上限 30,000 元"><small id="claimDifference"></small></div></div>
+      <div class="row c2 f">
+        <div><label class="req">已預支金額</label><input id="advanceDrawn" type="number" min="0" value="0" oninput="calc()"></div>
+        <div><label>預支單號</label><input id="advanceNo"></div>
+      </div>
+      <div class="row c2 f">
+        <div><label class="req" id="midLabel">已預收金額</label><input id="prepaid" type="number" min="0" value="0" oninput="calc()"></div>
+        <div><label class="req">已墊付金額</label><input id="outOfPocket" type="number" min="0" value="0" oninput="calc()"></div>
+      </div>
+      <div class="settle">
+        <div><div class="lb" style="margin-bottom:6px">結算金額</div><div class="tag ok" id="sResult">結清</div></div>
+        <div class="amt-big" id="settleAmt">NT$ 0</div>
+      </div>
+      <div class="zh">應請款 ＝ 本次申請核銷金額 − 已預支 − <span id="midWord">已預收</span>。已墊付保留實際支付金額，不因核銷上限減少。</div>
+    </section>
+
+    <!-- 領據：僅 PE / RE -->
+    <section id="secReceipt" style="display:none">
+      <div class="sec-label">領據</div>
+      <div class="row c2 f">
+        <div><label class="req">具領人姓名</label><input id="payeeName"></div>
+        <div><label class="req">身分證字號</label><input id="payeeId"></div>
+      </div>
+      <div class="row c2 f">
+        <div><label class="req">明細／事由</label><input id="payeeReason"></div>
+        <div><label class="req">金額</label><input id="payeeAmt" type="number" min="0" value="0" oninput="calcZh()"></div>
+      </div>
+      <div class="zh" id="payeeAmtZh">合計新台幣　零元整</div>
+      <div class="row c1 f" style="margin-top:24px">
+        <div><label class="req">戶籍地址</label><input id="addr1"></div>
+      </div>
+      <div class="row c2 f">
+        <div>
+          <label>通訊地址</label>
+          <div class="chk"><input type="checkbox" id="addrSame" checked onchange="toggleAddr()"><label for="addrSame" style="margin:0;font-size:14px;color:var(--ink)">同戶籍地址</label></div>
+        </div>
+        <div><label>不同時請填寫</label><input id="addr2" disabled></div>
+      </div>
+      <div class="row c2 f">
+        <div><label class="req">電話</label><input id="phone"></div>
+        <div><label>領據日期</label><input id="payeeDate" type="date"></div>
+      </div>
+      <div class="row c2 f">
+        <div><label class="req">具領人簽章（上傳影像）</label><input id="sig" type="file" accept="image/*" onchange="pickSig(this)"></div>
+        <div></div>
+      </div>
+      <img id="sigPrev" class="preview" alt="具領人簽章">
+    </section>
+  </div>
+
+</div>
+
+<div class="bar" id="bar" style="display:none">
+  <div class="bar-inner">
+    <div id="status"></div>
+    <details class="more-actions"><summary>更多</summary><div class="more-actions-panel"><button class="btn btn-text" onclick="saveDraft(false)">儲存本機草稿</button><button class="btn btn-text" onclick="loadDraft()">載入本機草稿</button><button class="btn btn-text" onclick="printBlank()">空白表（備用列印）</button><button class="btn btn-text" onclick="clearAll()">清除目前欄位</button></div></details>
+    <button class="btn btn-text" onclick="downloadCurrentPdf()">下載 PDF</button><button class="btn btn-text" onclick="preview()">預覽版面</button>
+    <button class="btn btn-main" id="submitBtn" onclick="submitForm()">檢查並儲存單據</button>
+  </div>
+</div>
+
+<div id="sheets">
+  <div id="pvHead">
+    <span class="t">版面預覽</span>
+    <span class="h" id="pvHint"></span>
+    <button onclick="closePreview()">關閉</button>
+  </div>
+  <div id="pvBody"></div>
+</div>
+
+<script src="config.js"></script><script src="assets/core.js"></script><script src="assets/storage.js"></script><script src="assets/transport.js"></script><script src="assets/legacy-forms.js"></script><script src="assets/app.js"></script><script src="assets/receipts.js"></script></body></html>
