@@ -263,12 +263,12 @@
         <div><label>填單日期</label><input id="fileDate" type="date"></div>
         <div>
           <label for="voucherCount">明細筆數</label>
-          <input id="voucherCount" type="number" value="0" readonly aria-label="明細筆數，自動計算"><small>依明細自動統計，不必先填張數。</small>
+          <input id="voucherCount" type="number" value="0" readonly aria-label="明細筆數，自動計算">
           <div style="font-size:12px;color:var(--danger);margin-top:6px" id="vcHint"></div>
         </div>
       </div>
 <div id="receiptDrop" class="receipt-drop" tabindex="0" role="button" aria-label="拖入憑證或按 Enter 選擇多個檔案">
-        <strong>把憑證拖到這裡</strong><span>可一次放入照片或多頁 PDF，再逐筆確認金額與用途。</span>
+        <strong>把憑證拖到這裡</strong>
         <label class="choose-files">選擇檔案<input id="batchReceipts" type="file" accept="image/*,.heic,.heif,.hif,application/pdf" multiple></label>
       </div>
       <div id="uploadProgress" role="status" aria-live="polite"></div><ul id="uploadErrors" aria-label="未加入的檔案"></ul>
@@ -297,7 +297,7 @@
     </section>
 
     <section id="secAmount">
-      <div class="sec-label">資金核對</div><div class="row c2 f"><div><label for="claimAmount">本次申請核銷金額</label><input id="claimAmount" type="number" min="0" placeholder="未填時依支出明細總額" oninput="calc()"></div><div><label for="claimNote">不申請核銷差額說明</label><input id="claimNote"><small id="claimDifference"></small></div></div>
+      <div class="sec-label">資金核對</div><div class="row c2 f"><div><label for="claimAmount">本次申請核銷金額</label><input id="claimAmount" type="number" min="0" oninput="calc()"></div><div><label for="claimNote">不申請核銷差額說明</label><input id="claimNote"><small id="claimDifference"></small></div></div>
       <div class="row c2 f">
         <div><label class="req">已預支金額</label><input id="advanceDrawn" type="number" min="0" value="0" oninput="calc()"></div>
         <div><label>預支單號</label><input id="advanceNo"></div>
@@ -352,7 +352,7 @@
 <div class="bar" id="bar" style="display:none">
   <div class="bar-inner">
     <div id="status"></div>
-    <details class="more-actions"><summary>更多</summary><div class="more-actions-panel"><button class="btn btn-text" onclick="saveDraft(false)">儲存本機草稿</button><button class="btn btn-text" onclick="loadDraft()">載入本機草稿</button><button class="btn btn-text" onclick="printBlank()">空白表（備用列印）</button><button class="btn btn-text" onclick="clearAll()">清除目前欄位</button></div></details>
+    <details class="more-actions"><summary>更多</summary><div class="more-actions-panel"><button class="btn btn-text" onclick="saveDraft(false)">儲存本機草稿</button><button class="btn btn-text" onclick="loadDraft()">載入本機草稿</button><button class="btn btn-text" onclick="printBlank()">空白表（備用列印）</button><button class="btn btn-text" onclick="clearAll()">清除整張單</button></div></details>
     <button class="btn btn-text" onclick="downloadCurrentPdf()">下載 PDF</button><button class="btn btn-text" onclick="preview()">預覽版面</button>
     <button class="btn btn-main" id="submitBtn" onclick="submitForm()">檢查並儲存單據</button>
   </div>
