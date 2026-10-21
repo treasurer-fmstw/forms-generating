@@ -48,7 +48,7 @@
     <div class="reopen">
       <div class="rnote">單據被退回時，把原本填的內容叫回來修改。修改後建立新版本，單號不變；已簽舊版會保留。</div>
       <div class="rrow">
-        <input id="reDocNo" aria-label="單號" placeholder="輸入單號，例如 115PEA01"><input id="accessCode" type="password" aria-label="單據修改碼" placeholder="修改碼（專屬連結會自動帶入）">
+        <input id="reDocNo" aria-label="單號" placeholder="輸入單號"><input id="accessCode" type="password" aria-label="單據修改碼" placeholder="修改碼（專屬連結會自動帶入）">
         <button class="link" onclick="openRecord()">載入</button>
       </div>
       <div class="rrow">
@@ -272,7 +272,7 @@
         <label class="choose-files">選擇檔案<input id="batchReceipts" type="file" accept="image/*,.heic,.heif,.hif,application/pdf" multiple></label>
       </div>
       <div id="uploadProgress" role="status" aria-live="polite"></div><ul id="uploadErrors" aria-label="未加入的檔案"></ul>
-      <details class="bulk-tools"><summary>多筆使用相同科目或用途</summary><div class="row c2 f"><div><label for="bulkCode">共用科目編號</label><input id="bulkCode"></div><div><label for="bulkUse">共用用途</label><input id="bulkUse" placeholder="例如：交換生交通支出"></div></div><button type="button" id="applyBulk">帶入所有尚未填寫的欄位</button><small>已有內容的欄位不會被覆蓋。</small></details>
+      <details class="bulk-tools"><summary>多筆使用相同科目或用途</summary><div class="row c2 f"><div><label for="bulkCode">共用科目編號</label><input id="bulkCode"></div><div><label for="bulkUse">共用用途</label><input id="bulkUse"></div></div><button type="button" id="applyBulk">帶入所有尚未填寫的欄位</button><small>已有內容的欄位不會被覆蓋。</small></details>
       <table class="form" id="itemsTable">
         <thead><tr>
           <th style="width:44px"></th>
@@ -297,7 +297,7 @@
     </section>
 
     <section id="secAmount">
-      <div class="sec-label">資金核對</div><div class="row c2 f"><div><label for="claimAmount">本次申請核銷金額</label><input id="claimAmount" type="number" min="0" placeholder="未填時依支出明細總額" oninput="calc()"><small>例如實際支出 40,000、只能核銷 30,000，這裡填 30,000。</small></div><div><label for="claimNote">不申請核銷差額說明</label><input id="claimNote" placeholder="例如：計畫核銷上限 30,000 元"><small id="claimDifference"></small></div></div>
+      <div class="sec-label">資金核對</div><div class="row c2 f"><div><label for="claimAmount">本次申請核銷金額</label><input id="claimAmount" type="number" min="0" placeholder="未填時依支出明細總額" oninput="calc()"></div><div><label for="claimNote">不申請核銷差額說明</label><input id="claimNote"><small id="claimDifference"></small></div></div>
       <div class="row c2 f">
         <div><label class="req">已預支金額</label><input id="advanceDrawn" type="number" min="0" value="0" oninput="calc()"></div>
         <div><label>預支單號</label><input id="advanceNo"></div>

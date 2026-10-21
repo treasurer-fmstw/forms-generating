@@ -32,7 +32,7 @@ function summary(r){
 }
 function validate(r,submit=false){
  if(!r||!types[r.formType]) throw Error('請選擇有效單別');
- if(!parseDocNo(r.docNo))throw Error('單號須為 3 位年度＋3 個英文字母＋流水號，例如 115EBA57');
+ if(!parseDocNo(r.docNo))throw Error('單號須為 3 位年度＋3 個英文字母＋流水號');
  const t=totals(r),layout=types[r.formType].layout;
  const required=(key,label)=>{if(!String(r[key]||'').trim()) throw Error('請填寫'+label);};
  if(submit){

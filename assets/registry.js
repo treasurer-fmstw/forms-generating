@@ -19,7 +19,7 @@
   if(!code)return;
   if(confirmation&&confirmation.docNo===code&&!force)return;
   const panel=panels.get(id),type=formType,turn=++generation;input.value=code;
-  if(!FMSTW.parseDocNo(code)){text(panel,'單號格式需為 3 位年度＋3 個英文字母（大表分頁名稱）＋流水號，例如 115EBA57。');return;}
+  if(!FMSTW.parseDocNo(code)){text(panel,'單號格式需為 3 位年度＋3 個英文字母（大表分頁名稱）＋流水號。');return;}
   text(panel,'正在查核單號…');
   try{
    const result=await Service.rpc('lookupRegistry',{docNo:code});

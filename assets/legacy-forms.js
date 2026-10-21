@@ -2,7 +2,7 @@
 const FORMS={
   ADVANCE:{label:'預支單',layout:'advance',header:'',version:'',
     roles:['LO','NO','財務長'],receipt:false,midLabel:'',
-    rule:'單號規則　年度＋部門代碼＋L＋流水號，例 115PEL01'},
+    rule:'單號規則　年度＋部門代碼＋L＋流水號'},
   ADVG:{label:'經費預支單（行政／計畫）',layout:'advance',header:'',version:'',
     advG:true,
     roles:['部長/申請人','副會長/秘書長','會長','財務長'],receipt:false,midLabel:'',
@@ -12,15 +12,15 @@ const FORMS={
     rule:'退費單號由財務長編配後填入'},
   GENERAL:{label:'一般核銷（計劃支出 P／行政支出 A）',layout:'general',header:'',version:'20260901',
     roles:['部長','副會長','會長','財務長'],receipt:false,midLabel:'已代收金額',
-    rule:'單號規則　年度＋部門代碼＋支出別（A/P）＋流水號2碼，例 115EBA01'},
+    rule:'單號規則　年度＋部門代碼＋支出別（A/P）＋流水號2碼'},
   PE:{label:'SCOPE 專業交換（PE）',layout:'exchange',header:'SCOPE招待費',version:'20260901',
     dept:'SCOPE',budgetCode:'IA1105',code:'PE',
     roles:['LO','NO','財務長'],receipt:false,midLabel:'已預收金額',
-    rule:'單號規則　行政 115PEA01／計劃 115PEP01'},
+    rule:'單號規則　年度＋PE＋支出別（A/P）＋流水號'},
   RE:{label:'SCORE 研究交換（RE）',layout:'exchange',header:'SCORE招待費',version:'20260901',
     dept:'SCORE',budgetCode:'IA1106',code:'RE',
     roles:['LO','NO','財務長'],receipt:false,midLabel:'已預收金額',
-    rule:'單號規則　行政 115REA01／計劃 115REP01'}
+    rule:'單號規則　年度＋RE＋支出別（A/P）＋流水號'}
 };
 
 const EXP_CATS=['國內交通費','國內住宿費','工作日餐費','醫院實習費','雜費及其他出遊活動'];
