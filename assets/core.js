@@ -9,6 +9,12 @@ const types={
  ADVG:{label:'經費預支單',roles:['部長/申請人','副會長/秘書長','會長','財務長'],layout:'advance'},
  REFUND:{label:'退費申請單',roles:[],layout:'refund'}
 };
+function parseDocNo(value){
+ const code=String(value||'').trim().toUpperCase().replace(/\s/g,'');
+ const m=code.match(/^(\d{3})([A-Z]{3})(\d+)$/);
+ if(!m||code.length>48||!Number.isSafeInteger(Number(m[3])))return null;
+ return {code,year:m[1],sheetName:m[2],number:Number(m[3])};
+}
 function amount(value,label='金額'){
  const n=Number(value==null||value===''?0:value);
  if(!Number.isSafeInteger(n)||n<0||n>999999999) throw Error(label+'須為 0 至 999,999,999 的整數');
@@ -26,7 +32,7 @@ function summary(r){
 }
 function validate(r,submit=false){
  if(!r||!types[r.formType]) throw Error('請選擇有效單別');
- if(!/^[A-Za-z0-9_-]{3,48}$/.test(String(r.docNo||''))) throw Error('單號須為 3–48 個英數字、連字號或底線');
+ if(!parseDocNo(r.docNo))throw Error('單號須為 3 位年度＋3 個英文字母＋流水號，例如 115EBA57');
  const t=totals(r),layout=types[r.formType].layout;
  const required=(key,label)=>{if(!String(r[key]||'').trim()) throw Error('請填寫'+label);};
  if(submit){
@@ -71,6 +77,6 @@ function validate(r,submit=false){
 }
 function nextRole(record){const roles=types[record.data.formType].roles;return roles[(record.signatures||[]).length]||'';}
 function checkVersion(current,expected){if(current!==expected)throw Error('資料已被其他人更新，請先重新載入；本次修改尚未覆蓋');}
-root.FMSTW={types,amount,totals,summary,validate,nextRole,checkVersion};
+root.FMSTW={types,parseDocNo,amount,totals,summary,validate,nextRole,checkVersion};
 if(typeof module!=='undefined')module.exports=root.FMSTW;
 })(globalThis);

@@ -1,14 +1,14 @@
 'use strict';
 window.Service=(()=>{
  const config=window.FMSTW_CONFIG,local=config.mode!=='cloud';
- let bridge=null,peer=null,peerOrigin='',ready=null;const pending=new Map();
+ let bridge=null,peer=null,peerOrigin='',ready=null,messageHandler=null;const pending=new Map();
  const nonce=crypto.randomUUID();
  function connect(){
   if(ready)return ready;
   ready=new Promise((resolve,reject)=>{
    if(!/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(config.appsScriptUrl))return reject(Error('尚未設定有效的資料服務網址'));
    const timer=setTimeout(()=>reject(Error('資料服務未連線，請保留草稿並重試')),25000);
-   window.addEventListener('message',e=>{
+   messageHandler=e=>{
     const m=e.data;if(!m||m.channel!==nonce)return;
     if(!peer){
      if(m.kind!=='ready'||!/^https:\/\/[\w-]+\.googleusercontent\.com$/.test(e.origin))return;
@@ -17,11 +17,11 @@ window.Service=(()=>{
     if(e.source!==peer||e.origin!==peerOrigin)return;
     const p=pending.get(m.id);if(!p)return;clearTimeout(p.timer);pending.delete(m.id);
     m.error?p.reject(Error(m.error)):p.resolve(m.result);
-   });
+   };window.addEventListener('message',messageHandler);
    bridge=document.createElement('iframe');bridge.hidden=true;bridge.title='資料連線';
    bridge.src=config.appsScriptUrl+'?bridge=1&origin='+encodeURIComponent(location.origin)+'&channel='+nonce;
    document.body.append(bridge);
-  });return ready;
+  }).catch(error=>{if(bridge)bridge.remove();if(messageHandler)window.removeEventListener('message',messageHandler);bridge=null;peer=null;peerOrigin='';ready=null;throw error;});return ready;
  }
  async function rpc(action,payload={}){
   if(local)return localCall(action,payload);
@@ -30,6 +30,7 @@ window.Service=(()=>{
  }
  function token(){const a=new Uint8Array(32);crypto.getRandomValues(a);return Array.from(a,n=>n.toString(16).padStart(2,'0')).join('');}
  async function localCall(action,p){
+  if(action==='registryInfo')return {year:'',configured:false};
   if(action==='lookupRegistry')return {status:'local_only'};
   if(action==='list')return(await LocalDB.entries('record:')).map(([,r])=>({docNo:r.data.docNo,formType:r.data.formType,version:r.version,status:r.status,updatedAt:r.updatedAt,next:FMSTW.nextRole(r)}));
   if(action==='save'){

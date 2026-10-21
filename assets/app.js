@@ -1,17 +1,19 @@
 'use strict';
-let currentRecord=null,dirty=false,saving=false,draftId=crypto.randomUUID(),activeRequest=null;
+let currentRecord=null,dirty=false,saving=false,pdfBusy=false,draftId=crypto.randomUUID(),activeRequest=null;
 const sessionLinks=new URLSearchParams(location.hash.slice(1));
 const baseCollect=collect;
-collect=function(){return {...baseCollect(),claimAmount:val('claimAmount'),claimNote:val('claimNote')};};
+collect=function(){const d=baseCollect();d.docNo=FMSTW.parseDocNo(d.docNo)?.code||d.docNo;return {...d,claimAmount:val('claimAmount'),claimNote:val('claimNote')};};
 const baseApply=applyData;
 applyData=function(d){baseApply(d);$('claimAmount').value=d.claimAmount??'';$('claimNote').value=d.claimNote||'';calc();labelRows();};
 esc=function(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));};
 const baseChoose=chooseType;
 chooseType=function(type){
+ if(saving||pdfBusy){setStatus('正在儲存或產生 PDF，請完成後再切換單別','');return false;}
  currentRecord=null;activeRequest=null;draftId=crypto.randomUUID();
  $('claimAmount').value='';$('claimNote').value='';
  baseChoose(type);$('fileDate').value=localDate();labelRows();
 };
+const resetBeforeLocalDate=hardReset;hardReset=function(){resetBeforeLocalDate();for(const id of ['fileDate','fileDateR','payeeDate'])$(id).value=localDate();};
 function localDate(){const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
 calc=function(){
  let total=0;document.querySelectorAll('#itemsBody tr').forEach((tr,i)=>{tr.querySelector('.no').textContent=i+1;tr.querySelector('.vno').value=i+1;total+=Number(tr.querySelector('.amt input').value)||0;});
@@ -50,15 +52,18 @@ saveDraft=async function(silent=false){
 };
 clearDraft=function(){LocalDB.remove('draft:'+draftId).catch(reportError);};
 loadDraft=async function(){try{const rows=(await LocalDB.entries('draft:')).filter(([,p])=>p.d.formType===formType).sort((a,b)=>b[1].t-a[1].t);if(!rows.length)throw Error('這個單別沒有本機草稿');if(confirm('載入此單別最近的草稿？'))await restoreDraft(rows[0][0]);}catch(e){reportError(e);}};
+function assertAttachmentsReady(){if((window.pendingAttachmentReads||0)>0)throw Error('附件仍在處理中，請完成後再儲存或產生 PDF');}
 async function persist(submit){
  if(saving)return;
+ if(pdfBusy)throw Error('正在產生 PDF，請完成後再儲存');
+ assertAttachmentsReady();
  const d=collect();FMSTW.validate(d,submit);
  if(currentRecord&&JSON.stringify(d)===JSON.stringify((({registryCheck,...editable})=>editable)(currentRecord.data))&&(!submit||currentRecord.status!=='草稿')){await showLinks(currentRecord);setStatus('內容沒有變更，沿用現有版本 '+currentRecord.version,'ok-msg');return;}
  if(currentRecord?.signatures?.length&&!confirm('修改正式內容會建立新版本，並重新簽核。舊版與原簽章會保留。確定繼續？'))return;
  if(currentRecord&&currentRecord.data.docNo!==d.docNo)throw Error('編輯原單時不能更換單號；請另外新增單據');
  const snapshot=JSON.stringify({d,submit});
  if(!activeRequest||activeRequest.snapshot!==snapshot)activeRequest={snapshot,id:crypto.randomUUID(),editToken:currentRecord?.editToken||Service.token(),signToken:Service.token()};
- saving=true;$('submitBtn').disabled=true;
+ saving=true;$('submitBtn').disabled=true;document.querySelector('.wrap').inert=true;document.querySelector('.bar').inert=true;
  try{
   setStatus('正在儲存，請稍候…','');
   if(!await saveDraft(true))throw Error('請先解決本機草稿儲存失敗，再送出，避免失去重試資料');
@@ -66,7 +71,7 @@ async function persist(submit){
   currentRecord=r;activeRequest=null;EDIT_MODE=true;await saveDraft(true);
   renderSheets(d);await showLinks(r);
   setStatus((Service.local?'本機測試已儲存':'雲端已儲存')+' · '+r.data.docNo+' · 內容版本 '+r.version+(submit?'。可預覽、下載 PDF。':'。可繼續修改。'),'ok-msg');
- }finally{saving=false;$('submitBtn').disabled=false;}
+ }finally{saving=false;$('submitBtn').disabled=false;document.querySelector('.wrap').inert=false;document.querySelector('.bar').inert=false;}
 }
 submitForm=()=>persist(true).catch(reportError);
 async function saveCloudDraft(){try{await persist(false);}catch(e){reportError(e);}}
@@ -94,7 +99,14 @@ async function batchReceipts(input){
  }input.value='';labelRows();
 }
 function downloadBlob(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.textContent='若未自動下載，點此下載 '+name;a.className='download-fallback';document.querySelector('.wrap').append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},120000);}
-async function prepareSigningPdf(){
+async function withPdfLock(operation){
+ if(saving||pdfBusy)throw Error('已有儲存或 PDF 作業進行中，請稍候');
+ assertAttachmentsReady();pdfBusy=true;document.querySelector('.wrap').inert=true;document.querySelector('.bar').inert=true;
+ try{return await operation();}finally{pdfBusy=false;document.querySelector('.wrap').inert=false;document.querySelector('.bar').inert=false;}
+}
+async function prepareSigningPdf(){return withPdfLock(prepareSigningPdfUnlocked);}
+async function prepareSigningPdfUnlocked(){
+ assertAttachmentsReady();
  if(!currentRecord||currentRecord.status==='草稿')throw Error('請先送出並儲存單據');
  if(JSON.stringify(collect())!==JSON.stringify((({registryCheck,...editable})=>editable)(currentRecord.data)))throw Error('欄位已變更，請先儲存新版再產生簽核 PDF');
  const blob=await makePdf(currentRecord.data),b64=await blobB64(blob);
@@ -102,22 +114,23 @@ async function prepareSigningPdf(){
  downloadBlob(blob,currentRecord.data.docNo+'.pdf');setStatus('待簽 PDF 已保存，可將簽核連結交給下一位','ok-msg');
 }
 async function blobB64(blob){return await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result).split(',')[1]);r.onerror=()=>reject(r.error);r.readAsDataURL(blob);});}
-async function downloadCurrentPdf(){try{const d=collect();FMSTW.validate(d,true);downloadBlob(await makePdf(d),d.docNo+'.pdf');}catch(e){reportError(e);}}
+async function downloadCurrentPdf(){try{await withPdfLock(async()=>{const d=collect();FMSTW.validate(d,true);downloadBlob(await makePdf(d),d.docNo+'.pdf');});}catch(e){reportError(e);}}
 // PDF generation lives in pdf.js; load only when requested.
 async function makePdf(d){await loadScriptOnce('assets/pdf.js');return window.buildDocumentPdf(d,FORMS[d.formType]);}
 function attachControls(){
  const cloud=document.createElement('button');cloud.className='btn btn-text';cloud.textContent=Service.local?'儲存測試單':'儲存雲端草稿';cloud.onclick=saveCloudDraft;document.querySelector('.more-actions-panel').append(cloud);
  const backup=document.createElement('label');backup.className='draft-chip';backup.textContent='匯入單據備份';const input=document.createElement('input');input.type='file';input.accept='.json';input.onchange=async()=>{try{const f=input.files[0];if(f.size>FMSTW_CONFIG.maxRecordBytes)throw Error('備份過大');const d=JSON.parse(await f.text());FMSTW.validate(d,false);hardReset();chooseType(d.formType);applyData(d);await saveDraft(false);}catch(e){reportError(e);}};backup.append(input);$('chooser').append(backup);
 }
-window.addEventListener('beforeunload',e=>{if(dirty||saving){e.preventDefault();e.returnValue='';}});
+window.addEventListener('beforeunload',e=>{if(dirty||saving||pdfBusy||(window.pendingAttachmentReads||0)>0){e.preventDefault();e.returnValue='';}});
 document.addEventListener('input',e=>{if(e.target.closest('#form')){dirty=true;scheduleAutoSave();}});document.addEventListener('change',e=>{if(e.target.closest('#form')){dirty=true;scheduleAutoSave();labelRows();}});
 $('batchReceipts').addEventListener('change',e=>batchReceipts(e.target));
+for(const id of ['fileDate','fileDateR','payeeDate'])$(id).value=localDate();
 showMode();attachControls();labelRows();$('jsFlag').textContent='前端已就緒';$('jsFlag').style.color='var(--faint)';
 LocalDB.open().then(refreshDrafts).catch(e=>{$('modeNote').textContent='本機儲存不可用：'+e.message;});
 if(sessionLinks.get('doc')&&sessionLinks.get('edit')){$('reDocNo').value=sessionLinks.get('doc');$('accessCode').value=sessionLinks.get('edit');openRecord();}
 // Structural edits (delete/reorder/add) must also mark drafts dirty.
 for(const id of ['itemsBody','refundBody','icBody'])new MutationObserver(()=>{if(formType){dirty=true;scheduleAutoSave();labelRows();}}).observe($(id),{childList:true});
 for(const name of ['pickReceipt','pickPassbook','pickSig','pickRefundPassbook']){
- const original=window[name];window[name]=async function(...args){await original(...args);dirty=true;await saveDraft(true);};
+ const original=window[name];window[name]=async function(...args){window.pendingAttachmentReads=(window.pendingAttachmentReads||0)+1;try{await original(...args);dirty=true;await saveDraft(true);}finally{window.pendingAttachmentReads--;}};
 }
 clearAll=function(){if(!confirm('確定清除目前欄位？已存的歷史版本不會刪除。'))return;hardReset();currentRecord=null;activeRequest=null;draftId=crypto.randomUUID();$('claimAmount').value='';$('claimNote').value='';calc();};

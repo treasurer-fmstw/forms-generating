@@ -50,5 +50,5 @@ window.buildDocumentPdf=async function(data,cfg){
  }
  const def={pageSize:'A4',pageMargins:[40,32,40,32],defaultStyle:{font:'Kai',fontSize:10,lineHeight:1.15},content,
   info:{title:data.docNo,subject:cfg.label,creator:'FMSTW 單據工作台'},footer:(page,pages)=>({text:page+' / '+pages,alignment:'right',font:'Times',fontSize:9,margin:[0,0,40,0]})};
- return new Promise((resolve,reject)=>{try{pdfMake.createPdf(def,null,fonts,vfs).getBlob(resolve);}catch(e){reject(e);}});
+ return new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('PDF 產生逾時，請減少附件後重試；單據資料仍保留')),60000);try{pdfMake.createPdf(def,null,fonts,vfs).getBlob(blob=>{clearTimeout(timer);resolve(blob);});}catch(e){clearTimeout(timer);reject(e);}});
 };

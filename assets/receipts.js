@@ -27,7 +27,7 @@ const receiptCalc=calc;calc=function(){receiptCalc();decorateReceipts();};
 async function addReceiptFiles(files){
  if(receiptBusy){$('uploadProgress').textContent='目前正在整理上一批檔案，請稍候。';return;}
  if(!files.length)return;
- receiptBusy=true;receiptZone.setAttribute('aria-busy','true');$('batchReceipts').disabled=true;$('uploadErrors').replaceChildren();
+ receiptBusy=true;window.pendingAttachmentReads=(window.pendingAttachmentReads||0)+1;receiptZone.setAttribute('aria-busy','true');$('batchReceipts').disabled=true;$('uploadErrors').replaceChildren();
  const startingType=formType,startingDraft=draftId;let added=0,duplicates=0,failed=0;
  const signatures=new Set([...$('itemsBody').rows].map(r=>r.dataset.attachmentHash).filter(Boolean));
  try{
@@ -50,7 +50,7 @@ async function addReceiptFiles(files){
    if(formType!==startingType||draftId!==startingDraft)break;
   }
  }finally{
-  receiptBusy=false;receiptZone.removeAttribute('aria-busy');$('batchReceipts').disabled=false;$('batchReceipts').value='';
+  receiptBusy=false;window.pendingAttachmentReads--;receiptZone.removeAttribute('aria-busy');$('batchReceipts').disabled=false;$('batchReceipts').value='';
   $('uploadProgress').textContent='已加入 '+added+' 份'+(duplicates?'，略過 '+duplicates+' 份重複檔案':'')+(failed?'，'+failed+' 份未加入（見下方）':'')+'。請確認各筆項目、金額與用途。';decorateReceipts();
  }
 }
@@ -70,7 +70,7 @@ $('itemsBody').addEventListener('input',decorateReceipts);
 decorateReceipts();
 pickReceipt=async function(input){
  const file=input.files[0];if(!file)return;const row=input.closest('tr'),box=row.querySelector('.thumb-box');
- const context={type:formType,draft:draftId};
+ const context={type:formType,draft:draftId};window.pendingAttachmentReads=(window.pendingAttachmentReads||0)+1;
  try{
   if(file.size>FMSTW_CONFIG.maxFileBytes)throw Error('超過單檔 12 MB 限制');
   box.setAttribute('aria-busy','true');
@@ -82,5 +82,5 @@ pickReceipt=async function(input){
   box.replaceChildren();const img=new Image();img.src=imgs[0];img.className='thumb';img.alt=file.name;box.append(img);
   markPicked(input,file.name,()=>{for(const k of ['img','imgs','pdf','attachmentName','attachmentHash'])delete row.dataset[k];box.replaceChildren();dirty=true;calc();saveDraft(true);});
   dirty=true;calc();await saveDraft(true);
- }catch(e){setStatus('憑證未更換：'+e.message,'err-msg');input.value='';}finally{box.removeAttribute('aria-busy');}
+ }catch(e){setStatus('憑證未更換：'+e.message,'err-msg');input.value='';}finally{window.pendingAttachmentReads--;box.removeAttribute('aria-busy');}
 };
