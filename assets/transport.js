@@ -6,7 +6,7 @@ window.Service=(()=>{
  function connect(){
   if(ready)return ready;
   ready=new Promise((resolve,reject)=>{
-   if(!/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(config.appsScriptUrl))return reject(Error('尚未設定有效的資料服務網址'));
+   if(!/^https:\/\/script\.google\.com\/(?:macros|a\/macros\/[a-z0-9.-]+)\/s\/[\w-]+\/exec$/.test(config.appsScriptUrl))return reject(Error('尚未設定有效的資料服務網址'));
    const timer=setTimeout(()=>reject(Error('資料服務未連線，請保留草稿並重試')),25000);
    messageHandler=e=>{
     const m=e.data;if(!m||m.channel!==nonce)return;

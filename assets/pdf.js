@@ -1,16 +1,19 @@
 'use strict';
 window.buildDocumentPdf=async function(data,cfg){
  const config=FMSTW_CONFIG;
+ const fontUrl=name=>new URL('assets/fonts/'+name,location.href).href;
+ const builtinKai=fontUrl('BiauKaiTC-Regular.woff'),builtinTimes=fontUrl('TimesNewRoman-Regular.ttf');
  const localKai=await LocalDB.get('font:kai'),localTimes=await LocalDB.get('font:times');
- if((!config.kaiFontUrl&&!localKai)||(!config.timesFontUrl&&!localTimes))throw Error('系統 PDF 字型尚未完成配置，未產生檔案。請由管理者完成部署設定；填單者不需要自行設定字型。');
+ 
  await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.12/pdfmake.min.js');
  await loadScriptOnce('https://cdn.jsdelivr.net/npm/html-to-pdfmake@2.5.20/browser.js');
  renderSheets(data);
  const pages=[...document.querySelectorAll('#pvBody .page')];
  if(!pages.length)throw Error('尚未產生正式版面');
- const kai=localKai?'local-kai.ttf':config.kaiFontUrl,times=localTimes?'local-times.ttf':config.timesFontUrl;
+ const kai=localKai?'local-kai.ttf':(config.kaiFontUrl||builtinKai),times=localTimes?'local-times.ttf':(config.timesFontUrl||builtinTimes);
  const vfs={};if(localKai)vfs[kai]=localKai.b64;if(localTimes)vfs[times]=localTimes.b64;
- const fonts={Kai:{normal:kai,bold:kai,italics:kai,bolditalics:kai},Times:{normal:times,bold:times,italics:times,bolditalics:times}};
+ for(const url of [...new Set([kai,times])])if(/^https?:/.test(url)){let response;try{response=await fetch(url);}catch(e){throw Error('字型檔無法載入，請檢查網站 assets/fonts 是否已完整上傳');}if(!response.ok)throw Error('缺少 PDF 字型檔，請完整上傳 assets/fonts 資料夾');}
+ const fonts={Kai:{normal:kai,bold:kai,italics:kai,bolditalics:kai},Times:{normal:times,bold:localTimes||config.timesFontUrl?times:fontUrl('TimesNewRoman-Bold.ttf'),italics:localTimes||config.timesFontUrl?times:fontUrl('TimesNewRoman-Italic.ttf'),bolditalics:localTimes||config.timesFontUrl?times:fontUrl('TimesNewRoman-BoldItalic.ttf')}};
  // Use rich text runs to prevent Chinese falling back into a Latin-only font.
  function mapFonts(node){
   if(Array.isArray(node)){node.forEach(mapFonts);return;}

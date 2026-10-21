@@ -1,0 +1,47 @@
+[
+  {
+    "file": "TimesNewRoman-Bold.ttf",
+    "postscriptName": "TimesNewRomanPS-BoldMT",
+    "embeddingFlags": 8,
+    "copyright": "© 2006 The Monotype Corporation. All Rights Reserved.",
+    "license": "You may use this font as permitted by the EULA for the product in which this font is included to display and print content.  You may only (i) embed this font in content as permitted by the embedding restrictions included in this font; and (ii) temporarily download this font to a printer or other output device to help print content.",
+    "licenseURL": null,
+    "sha256": "50f5b1f27b7d34621090e437e8b1dd4510a22d2823fc876b3286bed327b64bbb"
+  },
+  {
+    "file": "TimesNewRoman-Regular.ttf",
+    "postscriptName": "TimesNewRomanPSMT",
+    "embeddingFlags": 8,
+    "copyright": "© 2006 The Monotype Corporation. All Rights Reserved.",
+    "license": "You may use this font as permitted by the EULA for the product in which this font is included to display and print content.  You may only (i) embed this font in content as permitted by the embedding restrictions included in this font; and (ii) temporarily download this font to a printer or other output device to help print content.",
+    "licenseURL": null,
+    "sha256": "f3b4ffff71c2a0c7227d37497683b2498fb2d0a4e8beae26f022e3ccfcaabfa3"
+  },
+  {
+    "file": "TimesNewRoman-Italic.ttf",
+    "postscriptName": "TimesNewRomanPS-ItalicMT",
+    "embeddingFlags": 8,
+    "copyright": "© 2006 The Monotype Corporation. All Rights Reserved.",
+    "license": "You may use this font as permitted by the EULA for the product in which this font is included to display and print content.  You may only (i) embed this font in content as permitted by the embedding restrictions included in this font; and (ii) temporarily download this font to a printer or other output device to help print content.",
+    "licenseURL": null,
+    "sha256": "7bb99c3a67697fbce15ab66d806d9a2151432ce1dab2eaba4156e1251da486c0"
+  },
+  {
+    "file": "TimesNewRoman-BoldItalic.ttf",
+    "postscriptName": "TimesNewRomanPS-BoldItalicMT",
+    "embeddingFlags": 8,
+    "copyright": "© 2006 The Monotype Corporation. All Rights Reserved.",
+    "license": "You may use this font as permitted by the EULA for the product in which this font is included to display and print content.  You may only (i) embed this font in content as permitted by the embedding restrictions included in this font; and (ii) temporarily download this font to a printer or other output device to help print content.",
+    "licenseURL": null,
+    "sha256": "906157e8294fdf168d83002eaabde01c2d30fc3f44977be89e33fa22f262002a"
+  },
+  {
+    "file": "BiauKaiTC-Regular.woff",
+    "postscriptName": "BiauKaiTC-Regular",
+    "embeddingFlags": 4,
+    "copyright": "Copyright © 2022 DynaComware Taiwan Inc. All rights reserved.",
+    "license": "This font may be installed on one machine only, you can not sell or give these fonts to anyone else.",
+    "licenseURL": null,
+    "sha256": "91585f01681751d646c63cecd9bf432403e5b65e7bd1cf16ce64fe965f1e872b"
+  }
+]

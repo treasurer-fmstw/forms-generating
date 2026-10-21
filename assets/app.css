@@ -27,3 +27,6 @@ button{min-height:44px}small{display:block;color:#5f5e58;font-size:12px;margin-t
 @media(max-width:700px){.bar-inner{flex-wrap:wrap;justify-content:flex-end}.bar-inner #status{font-size:12px;max-height:68px;overflow:auto}.more-actions-panel{width:230px}.bar .btn{font-size:13px}.bar #submitBtn{padding:10px 12px}.bar .more-actions summary{font-size:13px;padding:8px 4px}}
 .registry-check{margin-top:10px;padding:12px 14px;background:#eef5ef;border-left:3px solid #648f79;font-size:14px}.registry-check p{margin:0 0 6px}.registry-check button{margin:10px 8px 0 0;padding:8px 12px;background:white;border:1px solid #96b6a7;border-radius:4px;cursor:pointer;font:inherit}.registry-check small{line-height:1.6}
 @media print{.registry-check{display:none!important}}
+
+@font-face{font-family:TnrLatin;src:url('fonts/TimesNewRoman-Regular.ttf') format('truetype');font-display:swap;unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF}
+@font-face{font-family:KaiLocal;src:url('fonts/BiauKaiTC-Regular.woff') format('woff');font-display:swap;unicode-range:U+2E80-FFEF}
